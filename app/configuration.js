@@ -2,6 +2,6 @@
 
     angular
         .module('configuration', [])
-        .constant('BASE_URL', 'http://f1lapcharts-davidor.rhcloud.com/raceresults/');
+        .constant('BASE_URL', 'https://f1lapcharts-davidor.rhcloud.com/raceresults/');
 
 })();
