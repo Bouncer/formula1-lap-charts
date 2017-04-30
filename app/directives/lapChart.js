@@ -19,7 +19,7 @@
                 const WIDTH = DIMENSIONS.width - 20;    // 20 => padding.
                 const HEIGHT = DIMENSIONS.height - 60;  // 60 => legend, title and padding.
                 const INSETS = {'left': 150, 'right': 150, 'top': 30, 'bottom': 30};
-                const PADDING = {'left': 20, 'right': 20, 'top': 15, 'bottom': 15};
+                const PADDING = {'left': 25, 'right': 20, 'top': 15, 'bottom': 15};
                 const TICK_MARK_LENGTH = 8;
                 const MARKER_RADIUS = 12;
                 const SCALES = {};
@@ -48,6 +48,8 @@
                         scope.raceResults.mechanical = processLapMarkers(scope.raceResults, "mechanical");
                         scope.raceResults.accident = processLapMarkers(scope.raceResults, "accident");
                         scope.raceResults.disqualified = processLapMarkers(scope.raceResults, "disqualified");
+                        scope.raceResults.finishes = processFinishMarkers(scope.raceResults, "finish");
+
 
                         // Visualize the data.
                         visualize(scope.raceResults);
@@ -73,11 +75,34 @@
                                 marker.lap = lap;
                                 marker.placing = lapData.placing[lap];
                                 marker.name = lapData.name;
+                                //marker.sname = lapData.name;
                                 markers[p++] = marker;
                             }
                         }
                     }
                     return markers;
+                }
+
+                function processFinishMarkers(data, key) {
+                    var markers = [];
+                    var p = 0;
+                    for (var i = 0; i < data.laps.length; i++) {
+                        var lapData = data.laps[i];
+                        var laps = lapData['placing'].length - 1;
+                        console.log(lapData.placing[laps]);
+                        var marker = {};
+                        marker.start = lapData.placing[0];
+                        marker.lap = laps;
+                        marker.placing = lapData.placing[laps];
+                        marker.name = lapData.name;
+                        //marker.sname = lapData.name;
+                        markers[p++] = marker;
+                    }
+                    return markers;
+                }
+
+                function safeName(name) {
+                    return name.replace(/[^A-Za-z0-9\s]+/g,'');
                 }
 
                 // Create the visualization.
@@ -127,6 +152,7 @@
                         });
 
                     // Add markers.
+                   addFinishes(vis, data.finishes, "finishes");
                     addMarkers(vis, data.pitstops, "pitstop", "P");
                     addMarkers(vis, data.mechanical, "mechanical", "M");
                     addMarkers(vis, data.accident, "accident", "X");
@@ -152,8 +178,73 @@
                         .domain([0, data.laps.length - 1])
                         .range([INSETS.top, HEIGHT - INSETS.bottom]);
 
-                    SCALES.clr = d3.scale.category20();
+                    //SCALES.clr = d3.scale.category20();
+                    SCALES.clr = d3.scale.category20c();
+                    SCALES.clr = {
+                        'Lewis Hamilton' : '#00CFBA',
+                        'Valtteri Bottas' : '#00CFBA',
+
+                        'Daniel Ricciardo' : '#00007D',
+                        'Max Verstappen' : '#00007D',
+                        
+                        'Sebastian Vettel' : '#C30000',
+                        'Kimi Rikknen' : '#C30000',
+                        
+                        'Sergio Prez' : '#FF80C7',
+                        'Esteban Ocon' : '#FF80C7',
+
+                        'Felipe Massa' : '#FFFFFF',
+                        'Lance Stroll' : '#FFFFFF',
+                        
+                        'Fernando Alonso' : '#FF7B08',
+                        'Stoffel Vandoorne' : '#FF7B08',
+                        
+                        'Carlos Sainz' : '#0000FF',
+                        'Daniil Kvyat' : '#0000FF',
+                        
+                        'Romain Grosjean' : '#6C0000',
+                        'Kevin Magnussen' : '#6C0000',
+
+                        'Nico Hlkenberg' : '#FFD800',
+                        'Jolyon Palmer' : '#FFD800',
+                        
+                        'Pascal Wehrlein' : '#006EFF',
+                        'Marcus Ericsson' : '#006EFF'  
+                    };
+
+                    SCALES.fonts = {
+                        'Lewis Hamilton' : '#000000',
+                        'Valtteri Bottas' : '#000000',
+
+                        'Daniel Ricciardo' : '#F6F6F6',
+                        'Max Verstappen' : '#F6F6F6',
+                        
+                        'Sebastian Vettel' : '#F6F6F6',
+                        'Kimi Rikknen' : '#F6F6F6',
+                        
+                        'Sergio Prez' : '#000000',
+                        'Esteban Ocon' : '#000000',
+
+                        'Felipe Massa' : '#000000',
+                        'Lance Stroll' : '#000000',
+                        
+                        'Fernando Alonso' : '#000000',
+                        'Stoffel Vandoorne' : '#000000',
+                        
+                        'Carlos Sainz' : '#F6F6F6',
+                        'Daniil Kvyat' : '#F6F6F6',
+                        
+                        'Romain Grosjean' : '#F6F6F6',
+                        'Kevin Magnussen' : '#F6F6F6',
+
+                        'Nico Hlkenberg' : '#000000',
+                        'Jolyon Palmer' : '#000000',
+                        
+                        'Pascal Wehrlein' : '#000000',
+                        'Marcus Ericsson' : '#000000'  
+                    };
                 }
+
 
                 // Highlight driver.
                 //
@@ -273,6 +364,14 @@
                         .duration(TRANSITION_DURATION)
                         .attr('cx', function(d) {
                             return SCALES.x(xform(d.lap, lap));
+                        });
+
+                    // Transition markers (circles).
+                    vis.selectAll('circle.marker.finishes')
+                        .transition()
+                        .duration(TRANSITION_DURATION)
+                        .attr('cx', function(d) {
+                            return SCALES.x(xform(d.lap+0.5, lap));
                         });
 
                     // Transition markers (labels).
@@ -465,8 +564,9 @@
                             return points.join(' ');
                         })
                         .style('stroke', function(d) {
-                            return SCALES.clr(d.placing[0]);
+                            return SCALES.clr[safeName(d.name)];
                         })
+                        .attr('stroke-linecap','round')
                         .on('mouseover', function(d) {
                             highlight(vis, d.name);
                         })
@@ -494,9 +594,7 @@
                         .text(function(d) {
                             return d.name;
                         })
-                        .style('fill', function(d) {
-                            return SCALES.clr(d.placing[0]);
-                        })
+                        .style('fill', '#F6F6F6')
                         .on('mouseover', function(d) {
                             highlight(vis, d.name);
                         })
@@ -505,6 +603,35 @@
                         });
                 }
 
+                function addFinishes(vis, data, cssClass, label) {
+                    label = label || "P";
+
+                    // Place circle glyph.
+                    vis.selectAll("circle.marker." + cssClass)
+                        .data(data)
+                        .enter()
+                        .append("svg:circle")
+                        .attr("class", "marker " + cssClass + " zoom")
+                        .attr("cx", function(d) {
+                            return SCALES.x(d.lap)+10;
+                        })
+                        .attr("cy", function(d) {
+                            return SCALES.y(d.placing - 1);
+                        })
+                        .attr("r", '6')
+                        .style("fill", function(d) {
+                            return SCALES.clr[safeName(d.name)];
+                        })
+                        .style('paint-order','stroke')
+                        .style('stroke','#FFFFFF')
+                        .style('stroke-width','2px')
+                        .on('mouseover', function(d) {
+                            highlight(vis, d.name);
+                        })
+                        .on('mouseout', function() {
+                            unhighlight(vis);
+                        });
+                }
                 // Add markers.
                 //
                 // vis: the visualization root.
@@ -529,8 +656,11 @@
                         })
                         .attr("r", MARKER_RADIUS)
                         .style("fill", function(d) {
-                            return SCALES.clr(d.start);
+                            return SCALES.clr[safeName(d.name)];
                         })
+                        .style('paint-order','stroke')
+                        .style('stroke','#FFFFFF')
+                        .style('stroke-width','2px')
                         .on('mouseover', function(d) {
                             highlight(vis, d.name);
                         })
@@ -553,6 +683,9 @@
                         .attr("dy", "0.35em")
                         .attr("text-anchor", "middle")
                         .text(label)
+                        .style("fill", function(d) {
+                            return SCALES.fonts[safeName(d.name)];
+                        })
                         .on('mouseover', function(d) {
                             highlight(vis, d.name);
                         })

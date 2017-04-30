@@ -48,11 +48,13 @@ text.label {
 
 text.label.marker {
     font-weight: bold;
+    fill:#FFF;
 }
 
 polyline.placing {
     fill: none;
     stroke-width: 5;
+    stroke: #CCC;
 }
 
 line.tickLine {
